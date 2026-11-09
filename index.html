@@ -46,7 +46,8 @@ img.px{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 #machine{position:fixed;inset:0;z-index:40;display:grid;place-items:center;
   background:radial-gradient(110% 80% at 50% 40%,#fdfbf8,#f5f1eb 60%,#ebe4da);
   transition:transform 1s cubic-bezier(.6,0,.25,1),opacity .35s .8s}
-#machine.zoom{opacity:0}
+#machine.zoom{opacity:0;pointer-events:none}
+button,a,.dico,.file{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .stickers{position:absolute;inset:0;overflow:hidden}
 .stk{position:absolute;left:calc(var(--l)*1%);top:calc(var(--t)*1%);width:min(calc(var(--s)*1vw),calc(var(--s)*1.6vh));height:auto;
   transform:rotate(calc(var(--r)*1deg));transition:transform .2s;image-rendering:pixelated;
@@ -573,7 +574,7 @@ function makeWin(key,title,icon,html,o={}){
   const mn=w.querySelector(".b-min");if(mn)mn.onclick=()=>minimize(w);
   const mx=w.querySelector(".b-max");if(mx)mx.onclick=()=>w.classList.toggle("max");
   if(!o.dialog)w.querySelector(".tb").addEventListener("dblclick",e=>{if(!e.target.closest("button"))w.classList.toggle("max")});
-  w.addEventListener("pointerdown",()=>focusWin(w));
+  w.addEventListener("pointerdown",()=>{if(active!==w)focusWin(w)});
   drag(w);focusWin(w);return w;
 }
 function focusWin(w){w.hidden=false;active=w;w.style.zIndex=++z;Object.values(open).forEach(x=>x.classList.toggle("inactive",x!==w));renderTasks()}
@@ -782,7 +783,13 @@ function openPlayer(){
 
 /* ===== Caixas de diálogo ===== */
 function dialog(key,title,icon,msg,buttons,pos="center"){
-  return makeWin(key,title,icon,`<div class="dlgbody">${ico(icon,32)}<div>${msg}</div></div><div class="dlgbtns">${buttons}</div>`,{dialog:true,pos});
+  const w=makeWin(key,title,icon,`<div class="dlgbody">${ico(icon,32)}<div>${msg}</div></div><div class="dlgbtns">${buttons}</div>`,{dialog:true,pos});
+  if(!w._fresh)return w;w._fresh=false;
+  /* cada botão com o próprio ouvinte: funciona mesmo quando o toque não chega ao documento */
+  w.querySelectorAll(".dlgbtns button").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();
+    const run=b.dataset.run,close=b.hasAttribute("data-close");if(close)closeWin(key);if(run&&RUN[run])RUN[run]()}));
+  const x=w.querySelector(".b-x");x.addEventListener("click",e=>e.stopPropagation());
+  return w;
 }
 function welcome(){
   if(innerWidth>640)dialog("dlg-rem","Lembrete","warn","<b>Kerning:</b><p>(s.) o espaço entre duas letras que só designers percebem.</p>",
