@@ -188,6 +188,11 @@ button,a,.dico,.file{touch-action:manipulation;-webkit-tap-highlight-color:trans
 .hero{display:block;width:100%;max-width:100%;aspect-ratio:3/2;padding:0;border:0;background:#fff;cursor:zoom-in}
 .poster .hero{aspect-ratio:4/5}
 .hero img{width:100%;height:100%;object-fit:contain;display:block}
+.vstage{display:flex;justify-content:center;background:#000;padding:4px}
+.vplay{display:block;width:auto;max-width:100%;height:min(62vh,600px);background:#000}
+.thumb.vid{position:relative;background:#000}
+.thumb.vid::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;
+  background:rgba(255,255,255,.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.5 2.5l4 2.5-4 2.5z' fill='%230a246a'/%3E%3C/svg%3E") center/16px no-repeat;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .vtools{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .vtools .count{margin-left:auto;padding:0 4px}
 .strip{display:flex;gap:4px;overflow-x:auto;padding:5px}
@@ -360,6 +365,7 @@ const FOLDERS=[
   {id:"digital",name:"Digital & Web",c1:"#b7c8ff",c2:"#5b72d6"},
   {id:"social",name:"Redes Sociais & Campanhas",c1:"#ffd76b",c2:"#e0a810"},
   {id:"posteres",name:"Pôsteres",c1:"#f4a9c9",c2:"#b8457a"},
+  {id:"videos",name:"Vídeos",c1:"#c9a7ff",c2:"#6b3fd6"},
 ];
 const im=(p,n)=>Array.from({length:n},(_,i)=>`img/p${p}-${String(i).padStart(3,"0")}.jpg`);
 const PROJECTS=[
@@ -385,6 +391,12 @@ const PROJECTS=[
     imgs:["img/po-sour-0.jpg","img/po-sour-1.jpg","img/po-sour-2.jpg"]},
   {id:"invencao-orum",folder:"posteres",name:"A Invenção do Orum",tag:"Pôster de cinema",desc:"Pôster do filme de Paulo Sena, realizado com recursos do Funcultura.",cover:0,imgs:["img/po-invencao.jpg"]},
   {id:"orum",folder:"posteres",name:"Orum",tag:"Cartaz de teatro",desc:"Cartaz do espetáculo Orum, apresentado pela Cabelo Seco, com Bené Freire.",cover:0,imgs:["img/po-orum.jpg"]},
+  {id:"vid-casa-verdura",folder:"videos",name:"Casa da Verdura",tag:"Reels · Ecosun Engenharia",desc:"Reels da Ecosun Engenharia sobre o projeto de energia solar do supermercado Casa da Verdura, com legendas animadas e imagens aéreas.",
+    video:"vid/ecosun-casa-da-verdura.mp4",cover:0,imgs:["img/vid-casa-da-verdura.jpg"]},
+  {id:"vid-ecosun-energia",folder:"videos",name:"Energia que transforma",tag:"Vídeo de marca · Ecosun Engenharia",desc:"Vídeo de marca da Ecosun Engenharia: “Energia para transformar o presente. Tecnologia para construir o futuro.”",
+    video:"vid/ecosun-energia.mp4",cover:0,imgs:["img/vid-energia.jpg"]},
+  {id:"vid-fio-b",folder:"videos",name:"Energia solar e o Fio B",tag:"Reels · Energia solar",desc:"Reels educativo sobre energia solar e a cobrança do Fio B, com legendas animadas e imagens de apoio.",
+    video:"vid/reels-fio-b.mp4",cover:0,imgs:["img/vid-fio-b.jpg"]},
 ];
 
 const FOLDER_INFO={
@@ -393,6 +405,7 @@ const FOLDER_INFO={
   digital:"Interfaces e páginas pensadas para captação.",
   social:"Feeds, e-mail marketing e campanhas para redes e mídia paga.",
   posteres:"Pôsteres de cinema e cartazes de teatro.",
+  videos:"Reels e vídeos de marca para redes sociais.",
 };
 const count=id=>PROJECTS.filter(p=>p.folder===id).length;
 const $=s=>document.querySelector(s);
@@ -645,7 +658,7 @@ function openFolder(id){
   const f=FOLDERS.find(x=>x.id===id),items=PROJECTS.filter(p=>p.folder===id);
   const w=makeWin("f-"+id,f.name,"folder",
     explorerHTML("C:\\Meus Trabalhos\\"+f.name,"folder",f.name,FOLDER_INFO[id],
-      items.map(p=>({key:p.id,name:p.name,art:`<span class="thumb"><img src="${p.imgs[p.cover]}" alt="" loading="lazy"></span>`}))),
+      items.map(p=>({key:p.id,name:p.name,art:`<span class="thumb${p.video?" vid":""}"><img src="${p.imgs[p.cover]}" alt="" loading="lazy"></span>`}))),
     {cls:"explorer-win",status:`${items.length} objeto(s)`,status2:"Clique duas vezes para abrir"});
   if(!w._fresh)return;w._fresh=false;
   wireFiles(w,k=>{const p=PROJECTS.find(x=>x.id===k);return `<div class="tag">${p.tag}</div><b>${p.name}</b><p>${p.desc}</p>`},openProject);
@@ -654,15 +667,17 @@ function openFolder(id){
 /* ===== Visualizador de projeto ===== */
 function openProject(id){
   const p=PROJECTS.find(x=>x.id===id),multi=p.imgs.length>1;
-  const body=p.captions
+  const body=p.video
+    ?`<div class="stage sunk vstage"><video class="vplay" src="${p.video}" poster="${p.imgs[0]}" controls playsinline preload="metadata"></video></div>`
+    :p.captions
     ?`<div class="gridwrap sunk"><div class="tgrid big">${p.imgs.map((s,i)=>`<button class="file" data-lb="${i}"><span class="thumb"><img src="${s}" alt="${p.captions[i]}" loading="lazy"></span><span class="lbl"><b>${pad2(i+1)}</b> ${p.captions[i]}</span></button>`).join("")}</div></div>`
     :`<div class="stage sunk"><button class="hero" data-lb="${p.cover}" aria-label="Ampliar imagem"><img src="${p.imgs[p.cover]}" alt="${p.name}"></button></div>
       <div class="vtools"><button class="btn" data-step="-1" ${multi?"":"disabled"}>◀ Anterior</button><button class="btn" data-step="1" ${multi?"":"disabled"}>Próxima ▶</button><button class="btn" data-zoom>Ampliar</button><span class="count">Imagem <b class="n">${p.cover+1}</b> de ${p.imgs.length}</span></div>
       ${multi?`<div class="strip sunk">${p.imgs.map((s,i)=>`<button data-i="${i}" aria-current="${i===p.cover}" aria-label="Imagem ${i+1}"><img src="${s}" alt="" loading="lazy"></button>`).join("")}</div>`:""}`;
-  const w=makeWin("p-"+id,`${p.name} - Visualizador de imagens`,"picture",
+  const w=makeWin("p-"+id,p.video?`${p.name} - Reprodutor de vídeo`:`${p.name} - Visualizador de imagens`,p.video?"music":"picture",
     `<div class="viewer"><header class="vh"><div class="tag">${p.tag}</div><h3>${p.name}</h3><p>${p.desc}</p></header>${body}
      <div class="vfoot"><button class="btn default" data-run="contato">Quero um projeto assim</button></div></div>`,
-    {cls:"viewer-win"+(p.folder==="posteres"||p.tall?" poster":""),status:`${p.imgs.length} imagem(ns)`,status2:p.tag});
+    {cls:"viewer-win"+(p.folder==="posteres"||p.tall||p.video?" poster":""),status:p.video?"Vídeo":`${p.imgs.length} imagem(ns)`,status2:p.tag});
   if(!w._fresh)return;w._fresh=false;
   let cur=p.cover;
   const show=i=>{cur=(i+p.imgs.length)%p.imgs.length;const h=w.querySelector(".hero");if(!h)return;
