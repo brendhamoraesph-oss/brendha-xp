@@ -264,6 +264,8 @@ fieldset a{color:#0000cc}
 .mp-ticker{height:22px;margin:0 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;background:#000;color:#9cff7a;font:12px var(--f-mono);border:1px solid #0b2a7a;border-top:0}
 .mp-marq{display:inline-block;padding-left:100%;animation:marq 16s linear infinite}
 @keyframes marq{to{transform:translateX(-100%)}}
+.mp-embed{margin:6px 6px 0;line-height:0}
+.mp-embed iframe{border-radius:10px}
 .mp-list{list-style:none;margin:6px;padding:2px;max-height:200px;overflow:auto;background:#fff;border:1px solid #7f9db9}
 .mp-list li{display:flex;align-items:center}
 .mp-list li button{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:4px 6px;border:0;background:none;text-align:left}
@@ -733,31 +735,42 @@ function openPlayer(){
   const w=makeWin("player","Brendha Player","music",`<div class="mp">
     <div class="mp-screen"><canvas class="mp-vis" aria-hidden="true"></canvas></div>
     <div class="mp-ticker" aria-live="polite"><span class="mp-marq"></span></div>
-    <ol class="mp-list">${TRACKS.map((s,i)=>`<li><button data-t="${i}"><span class="n">${i+1}</span><span class="tt2"><b>${s.t}</b><small>${s.a}</small></span></button><a class="mp-ext" data-ext="${i}" href="${spot(s.id)}" target="_blank" rel="noopener" aria-label="Ouvir ${s.t} no Spotify">Spotify ↗</a></li>`).join("")}</ol>
+    <div class="mp-embed" hidden></div>
+    <ol class="mp-list">${TRACKS.map((s,i)=>`<li><button data-t="${i}"><span class="n">${i+1}</span><span class="tt2"><b>${s.t}</b><small>${s.a}</small></span></button><a class="mp-ext" data-ext="${i}" href="${spot(s.id)}" target="_blank" rel="noopener" aria-label="Abrir ${s.t} no Spotify">Spotify ↗</a></li>`).join("")}</ol>
     <div class="mp-ctl">
-      <a class="mp-play" href="${spot(TRACKS[0].id)}" target="_blank" rel="noopener" aria-label="Ouvir no Spotify">${MPI.play}</a>
+      <a class="mp-play" href="${spot(TRACKS[0].id)}" target="_blank" rel="noopener" aria-label="Tocar">${MPI.play}</a>
       <button class="mp-small" data-mstep="-1" aria-label="Faixa anterior">${MPI.prev}</button>
       <button class="mp-small" data-mstep="1" aria-label="Próxima faixa">${MPI.next}</button>
       <div class="mp-seek" aria-hidden="true"><i></i></div>
       <div class="mp-vol" aria-hidden="true"></div>
-    </div></div>`,{cls:"mp-win",status:"Pronto",status2:"▶ abre a faixa no Spotify"});
+    </div></div>`,{cls:"mp-win",status:"Carregando o player…",status2:"Prévia de 30 s sem login no Spotify"});
   if(!w._fresh)return;w._fresh=false;
-  let cur=0,playing=false,ang=0;
-  const st=w.querySelector(".sb span");
-  const sel=i=>{cur=(i+TRACKS.length)%TRACKS.length;const s=TRACKS[cur];
-    w.querySelector(".mp-play").href=spot(s.id);w.querySelector(".mp-play").setAttribute("aria-label",`Ouvir ${s.t} no Spotify`);
+  let cur=0,playing=false,ang=0,ctrl=null,pos=0,dur=0;
+  const st=w.querySelector(".sb span"),seek=w.querySelector(".mp-seek i"),playBtn=w.querySelector(".mp-play");
+  const fmt=ms=>{const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+  const status=()=>{if(ctrl)st.textContent=(playing?"Tocando":"Pausado")+` · faixa ${cur+1} de ${TRACKS.length}`+(dur?` · ${fmt(pos)} / ${fmt(dur)}`:"");
+    else st.textContent=`Faixa ${cur+1} de ${TRACKS.length} · ▶ abre no Spotify`};
+  const paint=()=>{playBtn.classList.toggle("on",playing);playBtn.innerHTML=playing&&ctrl?'<svg width="16" height="18" viewBox="0 0 16 18" aria-hidden="true"><path d="M2 1h4v16H2zM10 1h4v16h-4z" fill="#1f4fc0"/></svg>':MPI.play;
+    seek.style.width=(ctrl&&dur?pos/dur*100:(cur+1)/TRACKS.length*100)+"%";status()};
+  const sel=(i,play)=>{cur=(i+TRACKS.length)%TRACKS.length;const s=TRACKS[cur];
+    playBtn.href=spot(s.id);
     const m=`♪ ${s.a} – ${s.t}`;w.querySelector(".mp-marq").textContent=`${m}     ·     ${m}`;
     w.querySelectorAll(".mp-list li").forEach((li,k)=>li.setAttribute("aria-current",k===cur));
-    w.querySelector(".mp-seek i").style.width=((cur+1)/TRACKS.length*100)+"%";
-    st.textContent=playing?`Tocando no Spotify · faixa ${cur+1} de ${TRACKS.length}`:`Faixa ${cur+1} de ${TRACKS.length}`};
+    if(ctrl){pos=0;dur=0;ctrl.loadUri("spotify:track:"+s.id);if(play){ctrl.play();setTimeout(()=>{if(!playing)ctrl.play()},700)}}
+    paint()};
   w.addEventListener("click",e=>{
-    const t=e.target.closest("[data-t]");if(t){playing=false;sel(+t.dataset.t)}
-    const m=e.target.closest("[data-mstep]");if(m){sel(cur+ +m.dataset.mstep)}
-    const x=e.target.closest("[data-ext]");if(x){playing=true;sel(+x.dataset.ext)}
-    if(e.target.closest(".mp-play")){playing=true;sel(cur)}
-    w.querySelector(".mp-play").classList.toggle("on",playing);
+    const t=e.target.closest("[data-t]");if(t)return sel(+t.dataset.t,!!ctrl);
+    const m=e.target.closest("[data-mstep]");if(m)return sel(cur+ +m.dataset.mstep,!!ctrl&&playing);
+    if(e.target.closest(".mp-play")&&ctrl){e.preventDefault();ctrl.togglePlay();return}
+    if(!ctrl&&(e.target.closest(".mp-play")||e.target.closest("[data-ext]"))){playing=true;const x=e.target.closest("[data-ext]");if(x)sel(+x.dataset.ext);else paint()}
   });
   sel(0);
+  /* player oficial do Spotify (funciona no domínio; na prévia fica no modo link) */
+  loadSpotify(api=>{if(!w.isConnected)return;const box=w.querySelector(".mp-embed"),el=document.createElement("div");box.append(el);box.hidden=false;
+    api.createController(el,{uri:"spotify:track:"+TRACKS[cur].id,width:"100%",height:80},c=>{ctrl=c;
+      c.addListener("playback_update",ev=>{const d=ev.data||{};playing=!d.isPaused;pos=d.position||0;dur=d.duration||0;paint()});
+      w.querySelector(".sb span:last-child").textContent="Prévia de 30 s sem login no Spotify";paint()})},
+    ()=>{w.querySelector(".sb span:last-child").textContent="▶ abre a faixa no Spotify";status()});
   const cv=w.querySelector(".mp-vis"),x=cv.getContext("2d"),still=matchMedia("(prefers-reduced-motion:reduce)").matches;
   function frame(t){
     if(!w.isConnected)return;
@@ -779,6 +792,16 @@ function openPlayer(){
     if(!still)requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+}
+let _spApi=null,_spWait=[],_spFail=false;
+function loadSpotify(ok,fail){
+  if(_spApi)return ok(_spApi);if(_spFail)return fail();
+  _spWait.push([ok,fail]);if(_spWait.length>1)return;
+  const done=api=>{_spApi=api;_spWait.splice(0).forEach(([o])=>o(api))};
+  const bad=()=>{if(_spApi)return;_spFail=true;_spWait.splice(0).forEach(([,f])=>f())};
+  window.onSpotifyIframeApiReady=done;
+  const sc=document.createElement("script");sc.src="https://open.spotify.com/embed/iframe-api/v1";sc.async=true;sc.onerror=bad;
+  document.head.append(sc);setTimeout(bad,6000);
 }
 
 /* ===== Caixas de diálogo ===== */
