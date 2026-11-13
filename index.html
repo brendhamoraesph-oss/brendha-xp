@@ -78,6 +78,8 @@ button,a,.dico,.file{touch-action:manipulation;-webkit-tap-highlight-color:trans
   background:radial-gradient(120% 100% at 30% 20%,#2c3a3c,#0a1011 70%);box-shadow:inset 0 0 34px rgba(0,0,0,.85)}
 .glass::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:linear-gradient(140deg,rgba(255,255,255,.14),transparent 34%),repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px)}
+.saver{position:absolute;inset:0;width:100%;height:100%;display:block}
+#machine.on .saver,.glass.wall .saver{display:none}
 .bootscr{position:absolute;inset:0;display:none;place-content:center;justify-items:center;gap:6cqw;background:#000;color:#fff;text-align:center}
 #machine.on .bootscr{display:grid;animation:crtOn .35s ease-out}
 @keyframes crtOn{0%{transform:scaleY(.01);filter:brightness(4)}60%{transform:scaleY(1)}100%{filter:none}}
@@ -340,6 +342,7 @@ fieldset a{color:#0000cc}
   <div class="rig">
     <div class="crt">
       <div class="bezel"><div class="glass" id="glass">
+        <canvas class="saver" id="saver" aria-hidden="true"></canvas>
         <div class="bootscr">
           <div class="xplogo"><img class="flag px" id="rainbow" alt="" aria-hidden="true">
             <div class="word"><small>Moraes</small><b>Brendha</b><sup>xp</sup></div></div>
@@ -530,6 +533,40 @@ const ico=(n,s=32)=>`<img class="px" src="${px(n)}" width="${s}" height="${s}" a
     x.fillStyle="#cfdff2";x.fillRect(ox+1,H-1,8,1)};
   cloud(0);cloud(W-10);
   $("#rainbow").src=c.toDataURL();})();
+
+/* protetor de tela do monitor desligado: estrelas + arco-íris quicando */
+(function(){
+  const cv=$("#saver"),x=cv.getContext("2d"),still=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const img=new Image();img.src=$("#rainbow").src;
+  let W=0,H=0,last=0,bx=20,by=16,vx=.045,vy=.032;
+  const stars=Array.from({length:110},()=>({x:Math.random()*2-1,y:Math.random()*2-1,z:Math.random()}));
+  function size(){const r=cv.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);W=r.width;H=r.height;
+    cv.width=Math.round(W*d);cv.height=Math.round(H*d);x.setTransform(d,0,0,d,0,0)}
+  function draw(dt){
+    if(!W)size();if(!W)return;
+    x.fillStyle="#05090b";x.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2;
+    for(const s of stars){s.z-=dt*.00022;
+      if(s.z<=.03){s.x=Math.random()*2-1;s.y=Math.random()*2-1;s.z=1}
+      const px=cx+s.x/s.z*cx*.35,py=cy+s.y/s.z*cy*.35;
+      if(px<0||px>W||py<0||py>H){s.z=1;continue}
+      const sz=Math.max(.7,(1-s.z)*2.6);x.fillStyle=`rgba(255,255,255,${(1-s.z)*.9+.1})`;x.fillRect(px,py,sz,sz)}
+    const lw=W*.24,lh=lw*19/34,fs=Math.max(8,W*.034),bh=lh+fs*1.5,bw=Math.max(lw,fs*5.2);
+    bx+=vx*dt;by+=vy*dt;
+    if(bx<0){bx=0;vx=Math.abs(vx)}if(bx+bw>W){bx=W-bw;vx=-Math.abs(vx)}
+    if(by<0){by=0;vy=Math.abs(vy)}if(by+bh>H){by=H-bh;vy=-Math.abs(vy)}
+    x.imageSmoothingEnabled=false;if(img.complete)x.drawImage(img,bx+(bw-lw)/2,by,lw,lh);
+    x.font=`bold ${fs}px Tahoma,Verdana,sans-serif`;x.textAlign="left";x.textBaseline="top";
+    const w1=x.measureText("Brendha ").width,w2=x.measureText("xp").width,tx=bx+(bw-w1-w2)/2,ty=by+lh+fs*.3;
+    x.fillStyle="#fff";x.fillText("Brendha ",tx,ty);x.fillStyle="#ff6a1f";x.fillText("xp",tx+w1,ty);
+  }
+  function frame(t){const dt=Math.min(60,t-(last||t));last=t;
+    if(!machine.hidden&&!machine.classList.contains("on"))draw(dt);
+    if(!still)requestAnimationFrame(frame)}
+  addEventListener("resize",()=>{W=0});
+  img.onload=()=>{if(still)draw(0)};
+  requestAnimationFrame(frame);
+})();
 
 /* ===== Monitor e boot ===== */
 const machine=$("#machine"),desk=$("#desk"),glass=$("#glass");
