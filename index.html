@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Brendha Moraes</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -320,7 +322,7 @@ em.ac.bold{font-weight:700}
 
 <main id="topo">
   <section class="panel stage" id="stage" aria-label="Apresentação e manifesto">
-    <div class="backdrop" aria-hidden="true"><video class="hv" id="hv" src="hero.mp4" poster="hero.jpg" autoplay muted loop playsinline preload="auto"></video><div class="grain"></div><div class="shade" id="shade"></div></div>
+    <div class="backdrop" aria-hidden="true"><video class="hv" id="hv" poster="hero.jpg" autoplay muted loop playsinline preload="auto"><source src="hero-v.mp4" type="video/mp4" media="(orientation: portrait)"><source src="hero.mp4" type="video/mp4"></video><div class="grain"></div><div class="shade" id="shade"></div></div>
     <div class="hero" id="heroc">
     <div class="stacks"><div class="stack">Designer<br>Publicitária<br>Vila Velha, ES</div><div class="stack r">Branding e<br>Comunicação<br>Visual</div></div>
     <h1><span>brendha</span> <span>moraes</span></h1>
@@ -357,7 +359,7 @@ em.ac.bold{font-weight:700}
   </section>
 
   <section id="contato" class="panel contact" aria-label="Contato">
-    <div class="cbg" aria-hidden="true"><video class="hv" src="hero.mp4" poster="hero.jpg" autoplay muted loop playsinline preload="metadata"></video><div class="cshade"></div></div>
+    <div class="cbg" aria-hidden="true"><video class="hv" poster="hero.jpg" autoplay muted loop playsinline preload="metadata"><source src="hero-v.mp4" type="video/mp4" media="(orientation: portrait)"><source src="hero.mp4" type="video/mp4"></video><div class="cshade"></div></div>
     <h2 data-reveal>Vamos criar algo <em class="ac plain">juntos?</em></h2>
     <div class="rows">
       <div class="row" style="--d:1"><span class="mono">E-mail</span><span class="v" id="c-mail">brendhamoraesph@gmail.com</span><div class="acts"><button class="btn" data-copy="c-mail">Copiar</button></div></div>
@@ -535,3 +537,4 @@ document.addEventListener("click",e=>{const h=e.target.closest("[data-home]");if
 document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",()=>{const el=document.getElementById(b.dataset.copy),sel=()=>getSelection().selectAllChildren(el);
   try{navigator.clipboard.writeText(el.textContent).then(()=>{b.textContent="Copiado";setTimeout(()=>b.textContent="Copiar",1600)},sel)}catch(e){sel()}}));
 </script>
+<script>if(matchMedia("(orientation: portrait)").matches)document.querySelectorAll("video.hv").forEach(v=>v.poster="hero-v.jpg")</script>
