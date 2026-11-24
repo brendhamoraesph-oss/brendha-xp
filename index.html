@@ -112,7 +112,9 @@ button,a,.dico,.file{touch-action:manipulation;-webkit-tap-highlight-color:trans
 .neck{width:32%;height:clamp(14px,3.6vw,24px);background:linear-gradient(#c9bb9a,#e4d9c2);clip-path:polygon(9% 0,91% 0,100% 100%,0 100%)}
 .base{width:58%;height:clamp(22px,6vw,40px);margin-top:-4px;border-radius:50%;background:radial-gradient(ellipse at 50% 28%,#f3ecdc,#d6c9aa 68%,#bcad88);box-shadow:0 16px 22px -12px rgba(70,45,40,.35)}
 .hint{margin-top:24px;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#a07a8c;animation:blink 1.4s steps(2) infinite}
-#machine.on .hint{visibility:hidden}
+#machine.on .hint{animation:none;opacity:.7}
+.pwr{transition:transform .15s}
+#machine.on .pwr{transform:scale(.88)}
 @keyframes blink{50%{opacity:.3}}
 
 /* ---------- Desktop ---------- */
@@ -352,7 +354,7 @@ fieldset a{color:#0000cc}
       <div class="chin" aria-hidden="true"><span class="key"></span><span class="key"></span><span class="key"></span><span class="key"></span><span class="key"></span><span class="led"></span><span class="pwr"></span></div>
     </div>
     <div class="neck"></div><div class="base"></div>
-    <div class="hint">Clique para ligar</div>
+    <div class="hint" id="hint">Ligando…</div>
   </div>
 </div>
 
@@ -567,11 +569,14 @@ const ico=(n,s=32)=>`<img class="px" src="${px(n)}" width="${s}" height="${s}" a
 
 /* ===== Monitor e boot ===== */
 const machine=$("#machine"),desk=$("#desk"),glass=$("#glass");
+let bootT=null;
 function powerOn(){
-  if(machine.classList.contains("on"))return;
-  machine.classList.add("on");setTimeout(zoomIn,3600);
+  if(machine.classList.contains("zoom"))return;
+  if(machine.classList.contains("on")){clearTimeout(bootT);zoomIn();return} /* clique durante o boot pula direto */
+  machine.classList.add("on");$("#hint").textContent="Clique para pular";bootT=setTimeout(zoomIn,3200);
 }
 function zoomIn(){
+  if(machine.classList.contains("zoom"))return;
   glass.classList.add("wall");
   const r=glass.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
   const s=Math.max(innerWidth/r.width,innerHeight/r.height)*1.06;
@@ -583,9 +588,11 @@ function zoomIn(){
 }
 machine.addEventListener("click",powerOn);
 machine.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();powerOn()}});
+/* liga sozinho ao abrir o site */
+setTimeout(()=>{if(!machine.hidden&&!machine.classList.contains("on"))powerOn()},1300);
 function shutDown(){
   Object.keys(open).forEach(closeWin);closeStart();
-  machine.hidden=false;machine.classList.remove("on","zoom");machine.style.transform="";
+  machine.hidden=false;machine.classList.remove("on","zoom");$("#hint").textContent="Clique para ligar";machine.style.transform="";
   glass.classList.remove("wall");
   requestAnimationFrame(()=>{desk.hidden=true;machine.focus()});
 }
