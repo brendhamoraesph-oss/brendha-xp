@@ -237,7 +237,8 @@ em.ac.bold{font-weight:700}
 .cmedia figure.vid{width:fit-content;max-width:100%;margin:0 auto;background:#000}
 .cmedia figure video{display:block;width:auto;max-width:100%;height:auto;max-height:calc(100svh - 96px);margin:auto;background:#000}
 .cmedia figcaption{position:absolute;left:12px;bottom:12px;padding:6px 10px;border-radius:99px;background:rgba(14,12,11,.65);backdrop-filter:blur(6px);font-size:12px}
-.cmedia.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cmedia.two{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.cmedia.mas{display:block;columns:3;column-gap:var(--gap)}.cmedia.mas figure{break-inside:avoid;margin:0 0 var(--gap)}
 .cmedia.four{grid-template-columns:repeat(4,minmax(0,1fr));align-items:start}
 .cmedia.six{grid-template-columns:repeat(6,minmax(0,1fr));align-items:start}
 .cmedia .prow{grid-column:1/-1;display:flex;gap:var(--gap);align-items:flex-start}.cmedia .prow figure{min-width:0}
@@ -304,6 +305,7 @@ em.ac.bold{font-weight:700}
   .cinfo{position:static;min-height:0}
   .cmedia.two{grid-template-columns:1fr 1fr}
   .cmedia.four{grid-template-columns:1fr 1fr}
+  .cmedia.mas{columns:2}
   .cmedia.six figure{grid-column:1/-1!important}
   .cmedia .prow{flex-direction:column}
   .wtop .l,.wtop .r{grid-column:1/-1}
@@ -409,7 +411,7 @@ const PROJECTS=[
     imgs:["img/p14-000.jpg","img/feed-ecosun.jpg","img/feed-bratech.jpg","img/feed-adviser.jpg",...im("14",6).slice(1),...im("15",6).filter(x=>x!=="img/p15-000.jpg")],
     captions:["Incorporadora imobiliária","Ecosun Engenharia","Bratech Smart Systems","Adviser Consultoria","Clínica de estética","Escritório de advocacia","Restaurante japonês","OAB · Subseção","Restaurante de frutos do mar","Exposição Rembrandt","Festival de botecos","Campanha CREA-ES","Teto vinílico · Arquitetura","Marketing pessoal"]},
   {id:"anhanguera",folder:"social",name:"Anhanguera",tag:"E-mail marketing",desc:"E-mails de relacionamento e rematrícula: hierarquia de leitura, CTAs claros e layout responsivo.",cover:0,cols:4,thumb:"img/anh-mockup.jpg",imgs:["img/anh-1.jpg","img/anh-3.jpg","img/anh-5.jpg","img/anh-7.jpg"]},
-  {id:"email-intl",folder:"social",name:"E-mail Marketing Internacional",tag:"E-mail marketing · Concessionárias nos EUA",desc:"E-mails promocionais e de pós-venda para concessionárias de veículos nos Estados Unidos: estoque, ofertas sazonais e serviços.",cover:4,
+  {id:"email-intl",folder:"social",name:"E-mail Marketing Internacional",tag:"E-mail marketing · Concessionárias nos EUA",desc:"E-mails promocionais e de pós-venda para concessionárias de veículos nos Estados Unidos: estoque, ofertas sazonais e serviços.",mas:true,cover:4,
     imgs:["img/em-0.jpg","img/em-1.jpg","img/em-2.jpg","img/em-3.jpg","img/em-4.jpg","img/em-5.jpg"],
     captions:["Gary Force Honda · Vehicle Report Card","North Corpus Christi Honda · Novo estoque","McGrath Arlington Kia · Novo serviço","Lexus of Merrillville · Labor Day","Mercedes-Benz of Latham · Ofertas de outubro","Oakbrook Toyota · Black Friday"]},
   {id:"sebrae-camp",folder:"social",name:"Sebrae",tag:"Campanhas digitais",desc:"Banners e anúncios para Brasil Mais, Sebrae com Elas e MEI: display, mídia paga e redes sociais.",cover:0,thumb:"img/seb-1.jpg",span:[2,2,2,6,6,6],narrow:[5],imgs:["img/seb-1.jpg","img/seb-2.jpg","img/seb-5.jpg","img/seb-3.jpg","img/seb-4.jpg","img/seb-0.jpg"]},
@@ -514,6 +516,7 @@ chips();grid();
 function openCase(id){const p=PROJECTS.find(x=>x.id===id);if(!p)return closeCase();
   const i=PROJECTS.indexOf(p),nx=PROJECTS[(i+1)%PROJECTS.length];
   const media=p.video?`<figure class="vid"><video src="${p.video}" poster="${p.imgs[0]}" controls playsinline preload="metadata"></video></figure>`
+    :p.mas?`<div class="cmedia mas">${p.imgs.map((s,k)=>`<figure class="pxbox"><img src="${s}" alt="${p.captions?p.captions[k]:p.name}" loading="lazy">${p.captions?`<figcaption>${p.captions[k]}</figcaption>`:""}</figure>`).join("")}</div>`
     :p.cols===4?`<div class="cmedia four">${p.imgs.map(s=>`<figure class="pxbox"><img src="${s}" alt="${p.name}" loading="lazy"></figure>`).join("")}</div>`
     :p.span?`<div class="cmedia six">${(()=>{const fig=(k,st)=>`<figure class="${/\.mp4$/.test(p.imgs[k])?"vbox":"pxbox"}" style="${st}">${/\.mp4$/.test(p.imgs[k])?`<video src="${p.imgs[k]}" autoplay muted loop playsinline preload="metadata" style="width:100%;height:auto;display:block"></video>`:`<img src="${p.imgs[k]}" alt="${p.captions?p.captions[k]:p.name}" loading="lazy">`}${p.captions?`<figcaption>${p.captions[k]}</figcaption>`:""}</figure>`;let h="";for(let k=0;k<p.imgs.length;k++){const n=6/p.span[k];if(p.span[k]<6&&n>1&&p.span.slice(k,k+n).length===n&&p.span.slice(k,k+n).every(v=>v===p.span[k])){const a=d=>{const x=DIM[p.imgs[d]]||[4,5];return x[0]/x[1]};h+=`<div class="prow">${Array.from({length:n},(_,j)=>fig(k+j,`flex:${a(k+j).toFixed(4)}`)).join("")}</div>`;k+=n-1}else h+=fig(k,p.narrow&&p.narrow.includes(k)?"grid-column:1/-1;width:100%;max-width:640px;margin:0 auto":`grid-column:span ${p.span[k]}`)}return h})()}</div>`
     :p.tall?`<div class="cmedia two">${p.imgs.map(s=>`<figure class="pxbox"><img src="${s}" alt="${p.name}" loading="lazy"></figure>`).join("")}</div>`
